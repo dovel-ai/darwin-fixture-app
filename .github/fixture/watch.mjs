@@ -103,7 +103,9 @@ async function checkConsole() {
     if (lastFinished?.status === 'failed') fail(`the last run failed: ${String(lastFinished.failure).slice(0, 200)}`, lastFinished.githubRunUrl ?? lastFinished.id)
     const consolePulls = (await darwin(`/v1/workspaces/${ws}/pull-requests?repository=${repository.id}&state=all&limit=100`)).data
     const byNumber = new Map(consolePulls.map(pull => [pull.number, pull]))
-    for (const pull of pulls) {
+    // Only update pull requests (they carry Darwin's dovel:update marker): the console does not list setup or
+    // workflow-update pull requests.
+    for (const pull of pulls.filter(item => Object.keys(item.moves).length > 0)) {
       const shown = byNumber.get(pull.number)
       const state = pull.merged_at !== null ? 'merged' : pull.state === 'closed' ? 'closed' : pull.draft ? 'draft' : 'open'
       const settled = now - Date.parse(pull.updated_at) > 3600_000
