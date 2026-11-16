@@ -85,12 +85,16 @@ for (const pull of pulls) {
 // 3. The console's view (optional: without a token the console is not checked).
 let consoleUpdates = []
 let consoleNote = 'not checked (no DARWIN_TOKEN)'
-if (env('DARWIN_TOKEN') !== '') {
+if (env('DARWIN_TOKEN') !== '') await checkConsole().catch(error => {
+  consoleNote = 'could not be read'
+  fail('the console could not be read', String(error.message).slice(0, 300))
+})
+async function checkConsole() {
   const ws = env('DARWIN_WORKSPACE')
   const repository = (await darwin(`/v1/workspaces/${ws}/repositories?limit=100`)).data.find(repo => repo.fullName.toLowerCase() === REPO.toLowerCase())
   if (repository === undefined) fail('the console does not list this repository', REPO)
   else {
-    const runs = (await darwin(`/v1/workspaces/${ws}/repositories/${repository.id}/runs?limit=20`)).data
+    const runs = (await darwin(`/v1/workspaces/${ws}/runs?repository=${repository.id}&limit=20`)).data
     for (const run of runs) {
       const started = Date.parse(run.startedAt ?? run.dispatchedAt ?? run.queuedAt)
       if (['queued', 'dispatched', 'running', 'publishing'].includes(run.status) && now - started > STUCK_MS) fail(`run ${run.id} is stuck in ${run.status}`, `since ${new Date(started).toISOString()}`)
