@@ -1,0 +1,48 @@
+name: Developer activity
+
+# Once a day a simulated developer adds the next dependency (.github/fixture/add-dependency.mjs) at an old release,
+# with a use and a test, and pushes it to main: Darwin should find the newer release and propose or hold it.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: developer
+  cancel-in-progress: false
+
+jobs:
+  add-dependency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Add the next dependency
+        id: add
+        run: |
+          set -euo pipefail
+          out=$(node .github/fixture/add-dependency.mjs)
+          echo "$out"
+          node -e 'const d = JSON.parse(process.argv[1]); console.log(`module=${d.module ?? ""}`); console.log(`version=${d.version ?? ""}`)' "$out" >> "$GITHUB_OUTPUT"
+      - name: Resolve, test and push
+        if: steps.add.outputs.module != ''
+        env:
+          MODULE: ${{ steps.add.outputs.module }}
+          VERSION: ${{ steps.add.outputs.version }}
+        run: |
+          set -euo pipefail
+          go get "$MODULE@$VERSION"
+          go mod tidy
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test ./...
+          git config user.name "fixture-developer"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fixture: add dependency $MODULE $VERSION"
+          git push origin HEAD

@@ -1,0 +1,29 @@
+name: Maintainer
+
+# Off unless the repository variable FIXTURE_MAINTAINER_MERGES is 'true': a simulated maintainer merges Darwin's pull
+# requests that Darwin marked ready for review (it does so only once CI passes), as the team Darwin proposes to would.
+on:
+  schedule:
+    - cron: '45 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-ready:
+    if: vars.FIXTURE_MAINTAINER_MERGES == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge Darwin's ready pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh pr list -R "$REPO" --state open --json number,isDraft,author,mergeStateStatus \
+            --jq '.[] | select(.isDraft == false and (.author.login | test("darwin")) and .mergeStateStatus == "CLEAN") | .number' |
+          while read -r number; do
+            gh pr merge -R "$REPO" "$number" --squash --delete-branch || echo "#$number could not be merged"
+          done
