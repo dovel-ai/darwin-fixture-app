@@ -1,2 +1,4 @@
 github.com/dovel-ai/darwin-fixture-geo v0.1.0 h1:qoxfaqBsBHV2MMlKDaKDdxwkFfXWXMDh3nHL83y7ZBE=
 github.com/dovel-ai/darwin-fixture-geo v0.1.0/go.mod h1:sOIOZ9i7/7jHpkRF9xoNjMqWqUvO4gAcD9cY1t7Ouvk=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
