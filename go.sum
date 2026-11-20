@@ -1,7 +1,7 @@
 github.com/cespare/xxhash/v2 v2.1.2 h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=
 github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/dovel-ai/darwin-fixture-geo v0.1.0 h1:qoxfaqBsBHV2MMlKDaKDdxwkFfXWXMDh3nHL83y7ZBE=
-github.com/dovel-ai/darwin-fixture-geo v0.1.0/go.mod h1:sOIOZ9i7/7jHpkRF9xoNjMqWqUvO4gAcD9cY1t7Ouvk=
+github.com/dovel-ai/darwin-fixture-geo v0.4.0 h1:BdHvPeHten66HUF3Rl6fhFO7UJzV3oZ6mk5NfZqJtj4=
+github.com/dovel-ai/darwin-fixture-geo v0.4.0/go.mod h1:sOIOZ9i7/7jHpkRF9xoNjMqWqUvO4gAcD9cY1t7Ouvk=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
