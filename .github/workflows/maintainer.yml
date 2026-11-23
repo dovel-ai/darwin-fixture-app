@@ -20,10 +20,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+        # GitHub computes a pull request's merge state lazily: after main moves, the first read can be UNKNOWN. Such a
+        # read is retried before the pull request is skipped, and every pull request's state is logged.
         run: |
           set -euo pipefail
-          gh pr list -R "$REPO" --state open --json number,isDraft,author,mergeStateStatus \
-            --jq '.[] | select(.isDraft == false and (.author.login | test("darwin")) and .mergeStateStatus == "CLEAN") | .number' |
-          while read -r number; do
-            gh pr merge -R "$REPO" "$number" --squash --delete-branch || echo "#$number could not be merged"
+          ready_for_review() {
+            gh pr list -R "$REPO" --state open --json number,isDraft,author,mergeStateStatus \
+              --jq '.[] | select(.isDraft == false and (.author.login | test("darwin"))) | "\(.number) \(.mergeStateStatus)"'
+          }
+          for attempt in 1 2 3 4; do
+            states=$(ready_for_review)
+            grep -q ' UNKNOWN$' <<<"$states" || break
+            if [ "$attempt" -lt 4 ]; then sleep 30; fi
           done
+          [ -n "$states" ] || { echo "No Darwin pull request is ready for review."; exit 0; }
+          while read -r number state; do
+            echo "#$number: $state"
+            [ "$state" = CLEAN ] || continue
+            gh pr merge -R "$REPO" "$number" --squash --delete-branch || echo "#$number could not be merged"
+          done <<<"$states"
