@@ -6,7 +6,7 @@ require github.com/dovel-ai/darwin-fixture-geo v0.6.0
 
 require github.com/google/uuid v1.6.0
 
-require github.com/dustin/go-humanize v1.0.0
+require github.com/dustin/go-humanize v1.1.0
 
 require github.com/cespare/xxhash/v2 v2.1.2
 
