@@ -22,10 +22,10 @@ func (l Leg) Length() float64 { return geo.GreatCircleDistance(l.From, l.To) }
 func (l Leg) Heading() float64 { return geo.InitialBearing(l.From, l.To) }
 
 // Halfway is the point halfway along the leg.
-func (l Leg) Halfway() geo.Point { return geo.Interpolate(l.From, l.To, 0.5) }
+func (l Leg) Halfway() geo.Point { return geo.Slerp(l.From, l.To, 0.5) }
 
 // Describe writes a stop as "lat,lon".
-func Describe(p geo.Point) string { return geo.FormatPoint(p) }
+func Describe(p geo.Point) string { return geo.PointString(p) }
 
 // ParseStops reads stops written as "lat,lon;lat,lon;...".
 func ParseStops(s string) ([]geo.Point, error) {
