@@ -20,4 +20,4 @@ require github.com/pkg/errors v0.9.1
 
 require golang.org/x/text v0.14.0
 
-require github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+require github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
