@@ -47,11 +47,16 @@ const atLeast = (version, target) => {
 }
 const requires = goMod => Object.fromEntries([...goMod.matchAll(/^\s*(?:require\s+)?([a-z0-9.\-_/]+\.[a-z]+\/[^\s]+)\s+(v[^\s]+)/gmu)].map(m => [m[1], m[2]]))
 
-// What each Darwin pull request moves, from the marker every Darwin PR body carries.
+// What each Darwin pull request moves, from the marker every Darwin PR body carries (the last one, if several):
+// <!-- dovel:update v=1 ecosystem=gomod directory=. moves=github.com%2Fcespare%2Fxxhash%2Fv2@v2.3.0 -->, each name
+// and version URL-encoded, moves joined by commas.
 const movesOf = body => {
-  const marker = /<!-- dovel:update \S+ \S+ moves=([^\s]+) -->/u.exec(String(body ?? ''))?.[1]
+  const marker = [...String(body ?? '').matchAll(/<!-- dovel:update [^>]*?moves=(\S+)/gu)].at(-1)?.[1]
   if (marker === undefined) return {}
-  return Object.fromEntries(marker.split(',').map(item => { const at = item.lastIndexOf('@'); return [item.slice(0, at), item.slice(at + 1)] }))
+  return Object.fromEntries(marker.split(',').map(item => {
+    const at = item.lastIndexOf('@')
+    return [decodeURIComponent(item.slice(0, at)), decodeURIComponent(item.slice(at + 1))]
+  }))
 }
 
 const failures = []
@@ -76,7 +81,15 @@ for (const pull of pulls) {
   pull.moves = movesOf(pull.body)
   if (pull.state !== 'open') continue
   pull.files = await ghAll(`repos/${REPO}/pulls/${pull.number}/files`)
-  const runs = (await gh(`repos/${REPO}/commits/${pull.head.sha}/check-runs?per_page=100`)).check_runs.filter(run => !/darwin/iu.test(run.name))
+  // The latest run of each check: an earlier run of the same check on this commit (before a re-run, or from another
+  // pull request on the same commit) no longer counts. Check run ids only grow.
+  const latest = new Map()
+  for (const run of (await gh(`repos/${REPO}/commits/${pull.head.sha}/check-runs?per_page=100`)).check_runs) {
+    if (/darwin/iu.test(run.name)) continue
+    const key = `${run.app?.id}:${run.name}`
+    if (!latest.has(key) || run.id > latest.get(key).id) latest.set(key, run)
+  }
+  const runs = [...latest.values()]
   pull.ci = runs.length === 0 ? 'none' : runs.some(run => run.status !== 'completed') ? 'pending'
     : runs.every(run => ['success', 'skipped', 'neutral'].includes(run.conclusion)) ? 'passed' : 'failed'
   if (!pull.draft && pull.ci === 'failed') fail(`#${pull.number} is ready for review with failing CI`, pull.html_url)
@@ -123,7 +136,9 @@ for (const event of [...releases, ...additions].sort((a, b) => a.at - b.at)) {
   const present = declared[event.module]
   const proposal = pulls.filter(pull => pull.state === 'open' && atLeast(pull.moves[event.module], event.version))
     .sort((a, b) => b.number - a.number)[0]
-  const update = consoleUpdates.find(item => item.name === event.module && item.ecosystem === 'gomod')
+  // The console's update for this change: the package's, recommending this version or a later one (a hold on an
+  // earlier version does not cover a newer release).
+  const update = consoleUpdates.find(item => item.name === event.module && item.ecosystem === 'gomod' && atLeast(item.recommendedVersion, event.version))
   let status
   if (atLeast(present, event.version)) status = 'merged'
   else if (proposal !== undefined) {
